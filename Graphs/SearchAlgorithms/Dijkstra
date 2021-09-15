@@ -1,0 +1,517 @@
+#include <iostream>
+#include <array>
+#include <limits>
+#include <vector>
+
+using namespace std;
+
+const int NmaxNodos=30; //Número máximo de nodos que va a tener nuestro grafo
+
+struct Arista
+{
+    int info; //int o lo que sea, struct, objeto, etc...
+    bool existe;
+};
+struct Nodo
+{
+    int info; //int o lo que sea, struct, objeto, etc…
+    bool existe;
+
+    bool visitado;
+
+    int distancia;
+
+    int IndPadre;
+    std::vector<Nodo*> Vecinos;
+};
+
+
+class GrafoMatrizAdy
+{
+public:
+    GrafoMatrizAdy(void);
+
+    bool GrafoVacio (void){if(numNodos==0)
+                                return true;
+                            else return false;}
+    int numeroNodos (void){return numNodos;}
+    int numeroArcos (void){
+                            int nArcos=0;
+                            for(int i=0;i<numNodos;i++)
+                            {
+                                for(int j=0;j<numNodos;j++)
+                                {
+                                    if(MatrizAdyacencia[i][j].existe)
+                                    {
+                                        nArcos++;
+                                    }
+                                }
+                            }
+                            return nArcos;
+                          }
+
+    bool insertarNodo(Nodo n);
+    bool crearArista(Nodo n1, Nodo n2, Arista);
+
+    void imprimirMat(void);
+    void imprimirNodos(void);
+
+    bool explorar(Nodo inicio);
+
+    bool suprimirNodo(int valor);
+    bool suprimirArista(int n1, int n2);
+
+    void dijkstra(Nodo inicio); //Calculamos algoritmo Dijkstra dese del nodo de inicio
+    void MostrarCaminoDijkstra(Nodo destino); //Muestra camino más corto a un nodo destino
+
+    int getPeso(Nodo inicio, Nodo destino);
+    int getIndiceNodo(Nodo n);
+
+    std::array<Nodo,NmaxNodos> getListaNodos(){return ListaNodos;}
+private:
+    std::array<Nodo,NmaxNodos> ListaNodos;
+    std::array<std::array<Arista,NmaxNodos>,NmaxNodos> MatrizAdyacencia;
+
+    int numNodos;
+
+    void resetVisitados(std::array<Nodo,NmaxNodos> *LN); //Bajamos flag visitado
+    void resetDistancias(std::array<Nodo,NmaxNodos> *LN); //Ponemos distancia a máximo que permite guardar su tipo
+};
+
+void GrafoMatrizAdy::resetDistancias(std::array<Nodo,NmaxNodos> *LN)
+{
+    for(int i=0;i<NmaxNodos;i++){
+        LN->at(i).distancia=std::numeric_limits<int>::max();
+    }
+}
+
+void GrafoMatrizAdy::resetVisitados(std::array<Nodo,NmaxNodos> *LN)
+{
+    for(int i=0;i<NmaxNodos;i++)
+    {
+        LN->at(i).visitado=false;
+    }
+}
+
+int GrafoMatrizAdy::getIndiceNodo(Nodo n)
+{
+
+    int i_aux=0;
+
+    while ( (i_aux < NmaxNodos) && (ListaNodos[i_aux].existe) && (ListaNodos[i_aux].info != n.info) )
+    {//Buscamos el indice con la info de valor
+        i_aux++;
+    }
+
+    if (i_aux == NmaxNodos)
+    {//El Nodo no está en la lista de nodos
+        return -1; //Si no encontramos valor de nodo en el array devolvemos -1
+    }
+    else
+    {
+        return i_aux; //Devolvemos su indice
+    }
+}
+
+void GrafoMatrizAdy::dijkstra(Nodo inicio)
+{
+   resetVisitados(&ListaNodos);
+   resetDistancias(&ListaNodos);
+
+   int indice=getIndiceNodo(inicio);
+
+   ListaNodos.at(indice).distancia=0;
+   ListaNodos.at(indice).visitado=true; //El primero que visitamos
+
+   Nodo *aux=&ListaNodos.at(indice); //Empezamos por el nodo inicio
+   Nodo *temp=nullptr;
+
+   int min_dist=std::numeric_limits<int>::max();
+
+   aux->IndPadre=-1; //Como es el origen ponemos -1 para diferenciarlo
+
+   bool flag=1;
+
+   while(flag) //Mientras haya algun nodo sin visitar
+   {
+       temp=nullptr;
+       for(auto &n:aux->Vecinos)
+       {//Buscamos el vecino con menor distancia a aux
+           if(n->visitado==0 && getPeso(*aux,*n)<min_dist)
+           {//Si el peso de la arista es menor que la minima anterior lo guardamos
+               min_dist=getPeso(*aux,*n);
+               temp=n; //Guardamos dirección del nodo con menor distancia a aux
+               temp->distancia=getPeso(*aux,*n);
+           }
+       }
+       if(temp==nullptr)
+       {//Si no hemos encontrado vecino que visitar hemos terminado
+           break; //Salimos del while
+       }
+
+       temp->visitado=true;
+       temp->IndPadre=getIndiceNodo(*aux); //Guardamos su padre para encontrar el camino que hemos seguido cuando hayamos terminado
+       if(temp->Vecinos.size()!=0)
+       {
+           for(auto &n:temp->Vecinos)
+           {//Para todos sus vecinos
+               if(n->distancia>temp->distancia+getPeso(*temp,*n))
+               {//Si hemos encontrado una distancia menor a la que teníamos la actualizamos con el nuevo valor
+                   n->distancia=temp->distancia+getPeso(*temp,*n);
+                   n->IndPadre=getIndiceNodo(*temp);    //Guardamos su padre para encontrar camino que hemos seguido
+                   aux=n; //Para la siguiente vuelta
+               }
+           }
+       }
+       else
+       {
+           break;
+       }
+   }//While(flag)
+}
+
+void GrafoMatrizAdy::MostrarCaminoDijkstra(Nodo destino)
+{
+    int indDest=getIndiceNodo(destino);
+
+    if(indDest==-1)
+    {
+        cout<<"nodo destino no encontrado en grafo"<<endl;
+    }
+    else
+    {
+        if(ListaNodos.at(indDest).distancia==std::numeric_limits<int>::max())
+        {
+            cout<<"No hay camnino desde el nodo de origen al nodo destino"<<endl;
+        }
+        else
+        {//Si hay camino
+            cout<<"El camino inverso es: "<<destino.info<<" ";
+            int aux=ListaNodos.at(indDest).IndPadre; //En indice padre guardabamos el indice del nodo Padre en la Lista de Nodos
+            while(aux!=-1)
+            {
+                std::cout<<ListaNodos.at(aux).info<<" ";
+                aux=ListaNodos.at(aux).IndPadre; //Actualizamos aux
+            }
+            cout<<endl;
+        }
+    }
+}
+
+GrafoMatrizAdy::GrafoMatrizAdy()
+{//Inicializamos la parte privada
+    for (unsigned long i=0;i<NmaxNodos;i++)
+    {
+        ListaNodos.at(i).info = 0;
+        ListaNodos.at(i).existe = false;
+        ListaNodos.at(i).visitado= false;
+        ListaNodos.at(i).distancia=std::numeric_limits<int>::max();  //El máximo valor que es capaz de almacenar un int-> como si fuera infinito
+
+        for (unsigned long j=0;j<NmaxNodos;j++)
+        {
+            MatrizAdyacencia[i][j].info = 0;
+            MatrizAdyacencia[i][j].existe = false;
+        }
+    }
+    numNodos=0;
+}
+
+bool GrafoMatrizAdy::insertarNodo(Nodo n)
+{
+    unsigned long i_aux=0;
+
+    while ( (ListaNodos[i_aux].existe == true) && (i_aux < NmaxNodos) )
+    {//Recorremos el array de nodos buscando una posición libre sin salirnos del nodo del tamaño
+        i_aux++;
+    }
+
+    if (i_aux == NmaxNodos)
+    {
+        return false; //No hay hueco para otro nodo
+    }
+    else
+    {//Guardamos la info del nuevo nodo
+        ListaNodos[i_aux].existe = true;
+        ListaNodos[i_aux].info = n.info;
+
+        numNodos++;
+        return true;
+    }
+}
+
+bool GrafoMatrizAdy::suprimirNodo (int valor)
+{
+    unsigned long i_aux=0, j_aux=0;
+
+    while ( (i_aux < NmaxNodos) && (ListaNodos[i_aux].existe) && (ListaNodos[i_aux].info != valor) )
+    {//Buscamos el indice con la info de valor
+        i_aux++;
+    }
+
+    if (i_aux == NmaxNodos)
+    {//El Nodo no está en la lista de nodos-
+        return false;
+    }
+    else
+    {//Borramos su información
+        ListaNodos.at(i_aux).info=0;
+        ListaNodos.at(i_aux).existe=0;
+        ListaNodos.at(i_aux).visitado=0;
+        ListaNodos.at(i_aux).distancia=std::numeric_limits<int>::max();
+
+        //Borramos ahora sus aristas
+        for (j_aux = 0; j_aux < NmaxNodos; j_aux++)
+        {
+            MatrizAdyacencia[i_aux][j_aux].existe = false;
+            MatrizAdyacencia[j_aux][i_aux].existe = false;
+
+            MatrizAdyacencia[i_aux][j_aux].info=0;
+            MatrizAdyacencia[j_aux][i_aux].info=0;
+        }
+        return true;
+    }
+}
+
+bool GrafoMatrizAdy::suprimirArista (int n1, int n2)
+{
+    unsigned long i_aux=0, j_aux=0;
+
+    while ( (i_aux < NmaxNodos) && (ListaNodos[i_aux].existe) && (ListaNodos[i_aux].info != n1) )
+    {//Buscamos el indice con la info de n1 (origen)
+        i_aux++;
+    }
+
+    if (i_aux == NmaxNodos)
+    {//El Nodo no está en la lista
+        return false;
+    }
+    else
+    {
+        j_aux = 0;
+
+         while ( (j_aux < NmaxNodos) && (ListaNodos[j_aux].existe) && (ListaNodos[j_aux].info != n2) )
+         {//Buscamos el indice con la info de N2 (destino)
+            j_aux++;
+         }
+
+        if (j_aux == NmaxNodos)
+        {//El Nodo2 no está en la lista de nodos->no podemos crear arista
+            return false;
+        }
+        else
+        {
+            MatrizAdyacencia[i_aux][j_aux].existe=0;
+            MatrizAdyacencia[i_aux][j_aux].info=0;
+        }
+        return true;
+    }
+}
+
+bool GrafoMatrizAdy::crearArista (Nodo N1, Nodo N2, Arista A)
+{
+    unsigned long i_aux=0, j_aux=0;
+
+    while ( (i_aux < NmaxNodos) && (ListaNodos[i_aux].existe) && (ListaNodos[i_aux].info != N1.info) )
+    {//Buscamos el indice con la info de N1 (origen de la arista)
+        i_aux++;
+    }
+
+    if (i_aux == NmaxNodos)
+    {//El Nodo1 no está en la lista de nodos->no podemos crear arista
+        return false;
+    }
+    else
+    {
+        j_aux = 0;
+         while ( (j_aux < NmaxNodos) && (ListaNodos[j_aux].existe) && (ListaNodos[j_aux].info != N2.info) )
+         {//Buscamos el indice con la info de N2 (destino de la arista)
+            j_aux++;
+         }
+
+        if (j_aux == NmaxNodos)
+        {//El Nodo2 no está en la lista de nodos->no podemos crear arista
+            return false;
+        }
+        else
+        {
+            if (MatrizAdyacencia[i_aux][j_aux].existe)
+            {//Ya existía la arista (relación) entre N1 y N2
+                return false;
+            }
+            else
+            {//Guardamos la info de la nueva arista
+                MatrizAdyacencia[i_aux][j_aux].existe = true;
+                MatrizAdyacencia[i_aux][j_aux].info = A.info;
+
+                ListaNodos[i_aux].Vecinos.push_back(&ListaNodos[j_aux]); //añadimos el nodo destino como vecino del origen
+
+                return true;
+            }
+
+        }//else de j_aux==NmaxNodos
+    }//else de i_aux==NmaxNodos
+}
+
+int GrafoMatrizAdy::getPeso(Nodo inicio, Nodo destino)
+{
+    unsigned long i_aux=0, j_aux=0;
+
+    while ( (i_aux < NmaxNodos) && (ListaNodos[i_aux].existe) && (ListaNodos[i_aux].info != inicio.info) )
+    {//Buscamos el indice con la info de N1 (origen de la arista)
+        i_aux++;
+    }
+
+    if (i_aux == NmaxNodos)
+    {//El Nodo1 no está en la lista de nodos->no podemos crear arista
+        return false;
+    }
+    else
+    {
+        j_aux = 0;
+         while ( (j_aux < NmaxNodos) && (ListaNodos[j_aux].existe) && (ListaNodos[j_aux].info != destino.info) )
+         {//Buscamos el indice con la info de N2 (destino de la arista)
+            j_aux++;
+         }
+
+        if (j_aux == NmaxNodos)
+        {//El Nodo2 no está en la lista de nodos->no podemos crear arista
+            return false;
+        }
+        else
+        {
+            if (MatrizAdyacencia[i_aux][j_aux].existe)
+            {//devolvemos su valor, el peso.
+                return MatrizAdyacencia[i_aux][j_aux].info;
+            }
+            else
+            {//No existe la arista
+                return false;
+            }
+        }
+    }
+}
+
+void GrafoMatrizAdy::imprimirMat()
+{
+    for(int i=0;i<NmaxNodos;i++)
+    {
+        for(int j=0;j<NmaxNodos;j++)
+        {
+            std::cout<<MatrizAdyacencia[i][j].existe;
+        }
+        std::cout<<std::endl;
+    }
+}
+
+void GrafoMatrizAdy::imprimirNodos()
+{
+    for(unsigned long i=0;i<NmaxNodos;i++)
+    {
+        std::cout<<ListaNodos[i].info;
+    }
+    std::cout<<std::endl;
+    std::cout<<std::endl;
+}
+
+bool GrafoMatrizAdy::explorar(Nodo inicio)
+{
+    resetVisitados(&ListaNodos); //Bajamos flag visitado para poder volver a recorrer
+
+    std::cout<<"Voy a recorrer el grafo de aquella manera..."<<std::endl;
+
+    unsigned long i_aux=0,j_aux=0;
+    bool cambioFila=false,fin=false;
+
+    while ( (i_aux < NmaxNodos) && ListaNodos[i_aux].info!=inicio.info )
+    {//Recorremos el array de nodos buscando nodo de inicio
+        i_aux++;
+    }
+
+    if (i_aux >= NmaxNodos)
+    {
+        std::cout<<"Nodo inicio no valido"<<std::endl;
+        return false; //No encontrado inicio
+    }
+    else
+    {
+        std::cout<<ListaNodos[i_aux].info<<" ";
+        while(!fin)
+        {
+            cambioFila=false;
+
+            if(MatrizAdyacencia[i_aux][j_aux].existe==1 && ListaNodos[j_aux].visitado==false && j_aux<NmaxNodos && i_aux<NmaxNodos)
+            {//Si 1 en la matriz no lo hemos visitado antes lo mostramos
+                std::cout<<ListaNodos[j_aux].info<<" "; //Mostramos por pantalla el valor del nodo
+                ListaNodos[i_aux].visitado=true; //Marcamos como visitado
+                i_aux=j_aux; //Saltamos a la fila del nodo destino
+                j_aux=0; //Primera columna
+                cambioFila=true;
+            }
+
+
+            if(!cambioFila)
+            {
+                j_aux++;
+            }
+
+            if(j_aux>NmaxNodos)
+            {
+                fin=true;
+            }
+        }//while
+
+        return true;
+    }
+}
+
+int main()
+{
+    cout << "Hello World!" << endl;
+    GrafoMatrizAdy Grafo;
+
+    std::cout<<"El grafo esta vacio?: ";
+    std::cout<<Grafo.GrafoVacio()<<std::endl;
+
+    Nodo n1{1,0,0,0,0};
+    Nodo n2{2,0,0,0,0};
+    Nodo n3{3,0,0,0,0};
+    Nodo n4{4,0,0,0,0};
+
+    Grafo.insertarNodo(n1);
+    Grafo.insertarNodo(n2);
+    Grafo.insertarNodo(n3);
+    Grafo.insertarNodo(n4);
+
+    Grafo.crearArista(n1,n2,{2,0}); //Ponemos peso en la arista
+    Grafo.crearArista(n2,n4,{2,0}); //Ponemos peso en la arista
+    //Grafo.crearArista(n1,n4,{1,0}); //Ponemos peso en la arista
+    Grafo.crearArista(n1,n4,{6,0}); //Ponemos peso en la arista
+    Grafo.crearArista(n3,n1,{2,0}); //Ponemos peso en la arista
+
+    Grafo.dijkstra(n1);
+
+    cout<<"Desde el nodo 1 podemos ir a: "<<std::endl;
+    for(auto a:Grafo.getListaNodos())
+    {
+        if(a.distancia!=numeric_limits<int>::max())
+        {
+            cout<<a.info<<" . Con una coste total de: "<<a.distancia<<endl;
+        }
+    }
+
+    cout<<"Camino Dijkstra a n1: "<<endl;
+    Grafo.MostrarCaminoDijkstra(n1);cout<<endl;
+    cout<<"Camino Dijkstra a n2: "<<endl;
+    Grafo.MostrarCaminoDijkstra(n2);cout<<endl;
+    cout<<"Camino Dijkstra a n3: "<<endl;
+    Grafo.MostrarCaminoDijkstra(n3);cout<<endl;
+    cout<<"Camino Dijkstra a n4: "<<endl;
+    Grafo.MostrarCaminoDijkstra(n4);cout<<endl;
+
+    Grafo.imprimirNodos();
+    Grafo.imprimirMat();
+
+    Grafo.explorar(n1);
+
+    return 0;
+}

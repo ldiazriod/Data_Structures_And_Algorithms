@@ -1,0 +1,88 @@
+include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+
+struct Nodo {
+    std::string Nombre;
+    int dato;
+    std::vector<Nodo*> Hijos;
+};
+
+void PreOrder(Nodo* n);
+void Recorrer(Nodo* n);
+void InOrder(Nodo* n);
+void PostOrder(Nodo* n);
+
+int main()
+{
+    std::cout<<"Ejemplo de arbol..."<<std::endl;
+
+    Nodo N9{"Nodo 9",9};
+    Nodo N10{"Nodo 10",10};
+    Nodo N11{"Nodo 11",11};
+
+    Nodo N4{"Nodo 4",4};
+    Nodo N5{"Nodo 5",5,{&N9,&N10}};
+    Nodo N6{"Nodo 6",6};
+    Nodo N7{"Nodo 7",7};
+    Nodo N8{"Nodo 8",8,{&N11}};
+
+    Nodo N2{"Nodo 2",2,{&N4,&N5,&N6}};
+    Nodo N3{"Nodo 3",3,{&N7,&N8}};
+
+    Nodo N1{"Nodo Raiz",1,{&N2,&N3}};
+
+    Recorrer(&N1);
+    std::cout<<"Pre-Order"<<std::endl;
+    PreOrder(&N1);
+    std::cout<<std::endl;
+
+    std::cout<<"Post-Order"<<std::endl;
+    PostOrder(&N1);
+    std::cout<<std::endl;
+
+    //PreOrden(&N2);
+
+    return 0;
+}
+
+void Recorrer(Nodo* n)
+{
+    if(&n!=nullptr)
+    {
+        //Recorremos arbol
+        for(int i=0; i<n->Hijos.size(); i++)
+        {
+            std::cout<<"Estoy en: "<<n->dato<<" Voy a: "<<n->Hijos.at(i)->dato<<std::endl;
+            Recorrer(n->Hijos.at(i));
+        }
+    }
+}
+
+void PreOrder(Nodo* n)
+{
+    if(&n!=nullptr)
+    {
+        //Procesar dato
+        std::cout<<n->dato<<" "<<n->Nombre<<std::endl;
+        //Recorremos arbol
+        for(int i=0; i<n->Hijos.size(); i++)
+        {
+            PreOrder(n->Hijos.at(i));
+        }
+    }
+}
+void PostOrder(Nodo* n)
+{
+    if(&n!=nullptr)
+    {
+        //Recorremos arbol
+        for(int i=0; i<n->Hijos.size(); i++)
+        {
+            PostOrder(n->Hijos.at(i));
+        }
+        //Procesar dato
+        std::cout<<n->dato<<" "<<n->Nombre<<std::endl;

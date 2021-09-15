@@ -1,0 +1,47 @@
+#include <iostream>
+#include <queue>
+
+
+using namespace std;
+
+
+int main()
+{   
+    priority_queue<int> Max_heap;
+    priority_queue<int, vector<int>, greater<int>> Min_heap; //Min-heap
+    
+    cout << "---------MIN-HEAP---------" << endl;
+    
+    Min_heap.push(1);
+    Min_heap.push(5);
+    Min_heap.push(8);
+    Min_heap.push(10);
+    
+    cout << Min_heap.top() << endl;
+    Min_heap.pop();
+    
+    cout << Min_heap.top() << endl;
+    Min_heap.pop();
+    
+    cout << Min_heap.top() << endl;
+    Min_heap.pop();
+    
+    cout << "---------MAX-HEAP---------" << endl;
+    
+    Max_heap.push(1);
+    Max_heap.push(5);
+    Max_heap.push(8);
+    Max_heap.push(10);
+    
+    cout << Max_heap.top() << endl;
+    Max_heap.pop();
+    
+    cout << Max_heap.top() << endl;
+    Max_heap.pop();
+    
+    cout << Max_heap.top() << endl;
+    Max_heap.pop();
+    
+    
+    return 0;
+}

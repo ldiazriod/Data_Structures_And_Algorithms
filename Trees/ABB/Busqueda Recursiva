@@ -1,0 +1,21 @@
+NodoArbol* BuscarRecur(int v, NodoArbol*n); //Buscamos de manera recursiva un nodo por valor (si existe->dirección, no existe->nullptr)
+
+NodoArbol *ArbolABB::BuscarRecur(int v, NodoArbol *n)
+{
+    if(n==nullptr)
+    {
+        return nullptr;
+    }
+    else if(v < n->valor)
+    {//Vamos por la izquierda
+        BuscarRecur(v,n->izq);
+    }
+    else if(v > n->valor)
+    {//Vamos por la derecha
+        BuscarRecur(v,n->der);
+    }
+    else
+    {//Encontrado, devolvemos dirección
+        return n;
+    }
+}
